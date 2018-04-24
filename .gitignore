@@ -1,0 +1,8 @@
+/.*
+!/.gitignore
+!/**/.gitignore
+/**/__pycache__/**
+/**/__pycache__
+/**/*.pyc
+/virtual_env
+/virtual_env/**
