@@ -103,9 +103,9 @@ class OpenDkimConfigurator(Configurator):
                 'opendkim:opendkim',
                 str(Path(domainkeys_path, 'mail.private'))
             ]
-        subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+            subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
         return {'dkim_keys': dkim_keys}
