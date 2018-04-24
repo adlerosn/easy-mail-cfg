@@ -29,7 +29,7 @@ def put_config_contents(cont: Union[str, List[str]]) -> None:
         cont = '\n'.join(cont)
     while '\n\n\n' in cont:
         cont = cont.replace('\n\n\n', '\n\n')
-    get_config_location().resolve().write_text(cont)
+    get_config_location().resolve().write_text(cont.strip()+'\n')
 
 
 def _parse() -> Dict[str, Tuple[int, str]]:
