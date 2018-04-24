@@ -102,7 +102,7 @@ class OpenDkimConfigurator(Configurator):
             dkim_keys[domain] = dns_dict
         command = [
             'chown',
-            'mail:mail',
+            'opendkim:opendkim',
             '-R',
             str(Path(odkim_path))
         ]
@@ -113,16 +113,6 @@ class OpenDkimConfigurator(Configurator):
         )
         for domain in domains:
             domainkeys_path = Path(keys_path, domain)
-            command = [
-                'chown',
-                'opendkim:opendkim',
-                str(Path(domainkeys_path, 'mail.private'))
-            ]
-            subprocess.run(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
             command = [
                 'chmod',
                 '0400',
