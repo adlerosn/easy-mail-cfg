@@ -9,7 +9,10 @@ from .cloudflare import CloudFlareConfigurator
 
 
 def main() -> None:
-    cf_mail, cf_token, *domains = list(map(str.split, Path('/srv/easymail.cfg').read_text().splitlines()))
+    inputfile: Path = Path('/srv/easymail.cfg')
+    if not inputfile.is_file():
+        raise FileNotFoundError(inputfile)
+    cf_mail, cf_token, *domains = list(map(str.strip, inputfile.read_text().splitlines()))
     Configurator.configure_many(
         [
             CloudFlareConfigurator,
