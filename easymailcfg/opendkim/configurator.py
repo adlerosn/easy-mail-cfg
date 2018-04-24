@@ -11,6 +11,7 @@ from typing import Match
 from typing import Optional
 from pathlib import Path
 import subprocess
+import shutil
 import re
 
 
@@ -49,6 +50,8 @@ class OpenDkimConfigurator(Configurator):
         cfg_update_applier({'SubDomains': 'yes'})
         cfg_overrided_update_applier({'SOCKET': '"{0}"'.format(cfg_patch['Socket'])})
         odkim_path = Path('/etc/opendkim')
+        if odkim_path.is_dir():
+            shutil.rmtree(str(odkim_path))
         keys_path = Path(odkim_path, 'keys')
         keys_path.mkdir(parents=True, exist_ok=True)
         trusted_hosts_file = Path(odkim_path, 'TrustedHosts')
@@ -59,17 +62,16 @@ class OpenDkimConfigurator(Configurator):
             *['*.{0}'.format(domain)
               for domain in domains
               ],
-            *domains,
-        ]))
+        ])+'\n')
         key_table_file.write_text('\n'.join([
             'mail._domainkey.{0} {0}:mail:/etc/opendkim/keys/{0}/mail.private'.format(domain)
             for domain in domains
-        ]))
+        ])+'\n')
         signing_table_file.write_text('\n'.join([
             *['*@{0} mail._domainkey.{0}'.format(domain)
                 for domain in domains
               ],
-        ]))
+        ])+'\n')
         dkim_keys: Dict[str, Dict[str, str]] = dict()
         for domain in domains:
             domainkeys_path = Path(keys_path, domain)
@@ -98,9 +100,32 @@ class OpenDkimConfigurator(Configurator):
                 'p': dns_parts[2],
             }
             dkim_keys[domain] = dns_dict
+        command = [
+            'chown',
+            'mail:mail',
+            '-R',
+            str(Path(odkim_path))
+        ]
+        subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        for domain in domains:
+            domainkeys_path = Path(keys_path, domain)
             command = [
                 'chown',
                 'opendkim:opendkim',
+                str(Path(domainkeys_path, 'mail.private'))
+            ]
+            subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            command = [
+                'chmod',
+                '0400',
                 str(Path(domainkeys_path, 'mail.private'))
             ]
             subprocess.run(
