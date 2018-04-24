@@ -7,7 +7,7 @@ This is just an automation of a [tutorial](https://fatorbinario.com/linux-como-a
 
 ## Environment
 
-- Ubuntu Server.
+- Ubuntu Server
 - Python 3.6+
 
 ## Running
