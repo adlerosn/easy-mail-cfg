@@ -71,6 +71,9 @@ class OpenDkimConfigurator(Configurator):
             *['*@{0} mail._domainkey.{0}'.format(domain)
                 for domain in domains
               ],
+            *['*@*.{0} mail._domainkey.{0}'.format(domain)
+                for domain in domains
+              ],
         ])+'\n')
         dkim_keys: Dict[str, Dict[str, str]] = dict()
         for domain in domains:
