@@ -13,6 +13,7 @@ from pathlib import Path
 import subprocess
 import shutil
 import re
+import os
 
 
 class OpenDkimConfigurator(Configurator):
@@ -52,6 +53,7 @@ class OpenDkimConfigurator(Configurator):
         odkim_path = Path('/etc/opendkim')
         if odkim_path.is_dir():
             shutil.rmtree(str(odkim_path))
+        os.symlink('/etc/opendkim.conf', '/etc/opendkim/opendkim.conf')
         keys_path = Path(odkim_path, 'keys')
         keys_path.mkdir(parents=True, exist_ok=True)
         trusted_hosts_file = Path(odkim_path, 'TrustedHosts')
