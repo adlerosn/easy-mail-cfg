@@ -12,7 +12,7 @@ def main() -> None:
     inputfile: Path = Path('/srv/easymail.cfg')
     if not inputfile.is_file():
         raise FileNotFoundError(inputfile)
-    cf_mail, cf_token, *domains = list(map(str.strip, inputfile.read_text().splitlines()))
+    cf_mail, cf_token, dmarc_mail, vm_ip4, vm_ip6, *domains = list(map(str.strip, inputfile.read_text().splitlines()))
     Configurator.configure_many(
         [
             CloudFlareConfigurator,
@@ -21,5 +21,7 @@ def main() -> None:
         ], {
             'domains': domains,
             'cf_api': (cf_mail, cf_token,),
+            'dmarc_mail': dmarc_mail,
+            'vm_ips': (vm_ip4, vm_ip6),
         }
     )
