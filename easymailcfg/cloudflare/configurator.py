@@ -106,7 +106,7 @@ class CloudFlareConfigurator(Configurator):
                 cf.zones.dns_records.post(zone_id, data=new_record)
             # print(dmarc_value)
             spf_okay = False
-            spf_value = 'v=spf1 +mx ~all'
+            spf_value = 'v=spf1 +a +mx ip4:'+ip4+' ip6:'+ip6+' -all'
             for dns_record in dns_records:
                 if dns_record['type'] != 'TXT' or dns_record['name'] != zone_name:
                     continue
