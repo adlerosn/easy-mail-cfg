@@ -28,24 +28,35 @@ class CloudFlareConfigurator(Configurator):
                 continue
             zone_id: str = zone['id']
             dns_records: List[Dict[str, str]] = cf.zones.dns_records.get(zone_id)
-            dkim_key_dict: Dict[str, str] = dkim_keys[zone_name]
-            dkim_key: str = "v={0}; k={1}; p={2}".format(dkim_key_dict['v'], dkim_key_dict['k'], dkim_key_dict['p'])
-            needs_adding_key = True
             # print(zone_name)
             # for dns_record in dns_records:
             #     print(dns_record)
-            for dns_record in dns_records:
-                if dns_record['type'] != 'TXT' or not dns_record['name'].endswith('._domainkey.'+zone_name):
-                    continue
-                existing_key: str = dns_record['content']
-                if dkim_key == existing_key:
-                    needs_adding_key = False
-                else:
-                    dns_record_id: str = dns_record['id']
-                    cf.zones.dns_records.delete(zone_id, dns_record_id)
+            # DKIM records
+            dkim_key_dict: Dict[str, str] = dkim_keys[zone_name]
+            needs_adding_key = [True, True]
+            dkim_key: str = "v={0}; k={1}; p={2}".format(dkim_key_dict['v'], dkim_key_dict['k'], dkim_key_dict['p'])
+            for wild in range(2):
+                for dns_record in dns_records:
+                    if dns_record['type'] != 'TXT' or not dns_record['name'].endswith('._domainkey.'+('*.'*wild)+zone_name):
+                        continue
+                    existing_key: str = dns_record['content']
+                    if dkim_key == existing_key:
+                        needs_adding_key[wild] = False
+                    else:
+                        dns_record_id: str = dns_record['id']
+                        cf.zones.dns_records.delete(zone_id, dns_record_id)
+                if needs_adding_key[wild]:
+                    new_record: Dict[str, str] = {
+                        'name': 'mail._domainkey.'+('*.'*wild)+zone_name,
+                        'type': 'TXT',
+                        'content': dkim_key,
+                    }
+                    cf.zones.dns_records.post(zone_id, data=new_record)
+            # No CAAs or CNAMEs
             for dns_record in dns_records:
                 if dns_record['type'] in ['CAA', 'CNAME']:
                     cf.zones.dns_records.delete(zone_id, dns_record['id'])
+            # A and AAAA records
             a_records_matrix = [[False, False], [False, False]]
             for dns_record in dns_records:
                 if dns_record['type'] not in ['A', 'AAAA']:
@@ -74,60 +85,58 @@ class CloudFlareConfigurator(Configurator):
                             'type': 'A' if v4t_v6f else 'AAAA',
                             'content': ip4 if v4t_v6f else ip6,
                         })
-            if needs_adding_key:
-                new_record: Dict[str, str] = {
-                    'name': 'mail._domainkey.'+zone_name,
-                    'type': 'TXT',
-                    'content': dkim_key,
-                }
-                cf.zones.dns_records.post(zone_id, data=new_record)
-            dmarc_okay = False
+            # DMARC records
+            dmarc_okays = [False, False]
             dmarc_value = 'v=DMARC1; p=reject; rua=mailto:' + dmarc_mail
-            for dns_record in dns_records:
-                if dns_record['type'] != 'TXT' or dns_record['name'] != '_dmarc.'+zone_name:
-                    continue
-                if dns_record['content'] == dmarc_value:
-                    dmarc_okay = True
-                else:
-                    dmarc_okay = True
-                    new_record = {
-                        'id': dns_record['id'],
-                        'name': dns_record['name'],
-                        'type': dns_record['type'],
+            for wild, dmarc_okay in enumerate(dmarc_okays):
+                for dns_record in dns_records:
+                    if dns_record['type'] != 'TXT' or dns_record['name'] != '_dmarc.'+('*.'*wild)+zone_name:
+                        continue
+                    if dns_record['content'] == dmarc_value:
+                        dmarc_okay = True
+                    else:
+                        dmarc_okay = True
+                        new_record = {
+                            'id': dns_record['id'],
+                            'name': dns_record['name'],
+                            'type': dns_record['type'],
+                            'content': dmarc_value,
+                        }
+                        cf.zones.dns_records.put(zone_id, dns_record['id'], data=new_record)
+                if not dmarc_okay:
+                    new_record: Dict[str, str] = {
+                        'name': '_dmarc.'+('*.'*wild)+zone_name,
+                        'type': 'TXT',
                         'content': dmarc_value,
                     }
-                    cf.zones.dns_records.put(zone_id, dns_record['id'], data=new_record)
-            if not dmarc_okay:
-                new_record: Dict[str, str] = {
-                    'name': '_dmarc.'+zone_name,
-                    'type': 'TXT',
-                    'content': dmarc_value,
-                }
-                cf.zones.dns_records.post(zone_id, data=new_record)
-            # print(dmarc_value)
-            spf_okay = False
-            spf_value = 'v=spf1 +a +mx ip4:'+ip4+' ip6:'+ip6+' -all'
-            for dns_record in dns_records:
-                if dns_record['type'] != 'TXT' or dns_record['name'] != zone_name:
-                    continue
-                if dns_record['content'] == spf_value:
-                    spf_okay = True
-                else:
-                    spf_okay = True
-                    new_record = {
-                        'id': dns_record['id'],
-                        'name': dns_record['name'],
-                        'type': dns_record['type'],
+                    cf.zones.dns_records.post(zone_id, data=new_record)
+                # print(dmarc_value)
+            # SPF records
+            spf_okays = [False, False]
+            spf_value = 'v=spf1 ip4:'+ip4+' ip6:'+ip6+' a mx -all'
+            for wild, spf_okay in enumerate(spf_okays):
+                for dns_record in dns_records:
+                    if dns_record['type'] != 'TXT' or dns_record['name'] != ('*.'*wild)+zone_name:
+                        continue
+                    if dns_record['content'] == spf_value:
+                        spf_okay = True
+                    else:
+                        spf_okay = True
+                        new_record = {
+                            'id': dns_record['id'],
+                            'name': dns_record['name'],
+                            'type': dns_record['type'],
+                            'content': spf_value,
+                        }
+                        cf.zones.dns_records.put(zone_id, dns_record['id'], data=new_record)
+                if not spf_okay:
+                    new_record: Dict[str, str] = {
+                        'name': ('*.'*wild)+zone_name,
+                        'type': 'TXT',
                         'content': spf_value,
                     }
-                    cf.zones.dns_records.put(zone_id, dns_record['id'], data=new_record)
-            if not spf_okay:
-                new_record: Dict[str, str] = {
-                    'name': zone_name,
-                    'type': 'TXT',
-                    'content': spf_value,
-                }
-                cf.zones.dns_records.post(zone_id, data=new_record)
+                    cf.zones.dns_records.post(zone_id, data=new_record)
+            # MX records
             mx_okays = [False, False]
             for dns_record in dns_records:
                 if dns_record['type'] != 'MX':
