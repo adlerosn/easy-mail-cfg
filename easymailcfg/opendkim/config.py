@@ -19,16 +19,20 @@ default_locations: List[Path] = [
 
 def get_config_location() -> Path:
     for location in locations:
-        if location.is_file():
+        if location.exists():
             return location
     raise OSError(2, 'No such file or directory', 'opendkim.conf')
 
 
-def get_default_location() -> Path:
+def get_default_location(or_create: bool = True) -> Path:
     for location in default_locations:
-        if location.is_file():
+        if location.exists():
             return location
-    raise OSError(2, 'No such file or directory', 'opendkim')
+    if or_create:
+        default_locations[0].touch(mode=0o644, exist_ok=True)
+        return get_default_location(not or_create)
+    else:
+        raise OSError(2, 'No such file or directory', 'opendkim')
 
 
 def get_config_contents() -> List[str]:
