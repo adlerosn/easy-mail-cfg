@@ -107,7 +107,7 @@ def update(new_config: Dict[str, str]) -> None:
         line_fmtd = ""
         if val is not None or val != '':
             line_fmtd = "{0:<23} {1}".format(key, val)
-        if line_fmtd != old_val:
+        if val != old_val:
             if old_line is not None:
                 config_raw[old_line] = line_fmtd
             else:
