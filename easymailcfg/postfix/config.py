@@ -16,7 +16,7 @@ def get_config_location() -> Path:
     for location in locations:
         if location.is_file():
             return location
-    raise OSError(2, 'No such file or directory', 'opendkim.conf')
+    raise OSError(2, 'No such file or directory', 'main.cf')
 
 
 def get_config_contents() -> List[str]:
