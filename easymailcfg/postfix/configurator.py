@@ -23,6 +23,7 @@ class PostfixConfigurator(Configurator):
         cfg_update_applier({
             'mydestination': ', '.join([
                 '$myhostname',
+                '$myhostname.$mydomain',
                 'localhost',
                 'localhost.$mydomain',
                 *sorted(domains),
