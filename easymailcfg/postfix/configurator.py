@@ -24,6 +24,7 @@ class PostfixConfigurator(Configurator):
             'mydestination': ', '.join([
                 '$myhostname',
                 'localhost',
+                'localhost.$mydomain',
                 *sorted(domains),
             ])
         })
