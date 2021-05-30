@@ -160,6 +160,7 @@ class CloudFlareConfigurator(Configurator):
                     new_record: Dict[str, str] = {
                         'name': (int(wild)*'*.')+zone_name,
                         'type': 'MX',
+                        'priority': 1,
                         'content': zone_name,
                     }
                     cf.zones.dns_records.post(zone_id, data=new_record)
