@@ -113,7 +113,7 @@ class CloudFlareConfigurator(Configurator):
                 # print(dmarc_value)
             # SPF records
             spf_okays = [False, False]
-            spf_value = 'v=spf1 ip4:'+ip4+' ip6:'+ip6+' a aaaa mx -all'
+            spf_value = 'v=spf1 ip4:'+ip4+' ip6:'+ip6+' a mx -all'
             for wild, spf_okay in enumerate(spf_okays):
                 for dns_record in dns_records:
                     if dns_record['type'] != 'TXT' or dns_record['name'] != ('*.'*wild)+zone_name:
@@ -151,6 +151,7 @@ class CloudFlareConfigurator(Configurator):
                     'id': dns_record['id'],
                     'name': dns_record['name'],
                     'type': dns_record['type'],
+                    'priority': 1,
                     'content': zone_name,
                 }
                 cf.zones.dns_records.put(zone_id, dns_record['id'], data=new_record)
