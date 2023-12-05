@@ -84,7 +84,8 @@ def _parse_default() -> Dict[str, Tuple[int, str]]:
             continue
         if len(expression.strip()) < 1:
             continue
-        setting, value = list(map(str.strip, expression.split('=', maxsplit=1)))
+        setting, value = list(
+            map(str.strip, expression.split('=', maxsplit=1)))
         if value == '':
             continue
         config[setting] = (lineno, value)

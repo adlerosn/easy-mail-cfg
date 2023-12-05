@@ -49,7 +49,8 @@ class OpenDkimConfigurator(Configurator):
         }
         cfg_update_applier(cfg_patch)
         cfg_update_applier({'SubDomains': 'yes'})
-        cfg_overrided_update_applier({'SOCKET': '"{0}"'.format(cfg_patch['Socket'])})
+        cfg_overrided_update_applier(
+            {'SOCKET': '"{0}"'.format(cfg_patch['Socket'])})
         odkim_path = Path('/etc/opendkim')
         if odkim_path.is_dir():
             shutil.rmtree(str(odkim_path))
@@ -65,7 +66,8 @@ class OpenDkimConfigurator(Configurator):
               ],
         ])+'\n')
         key_table_file.write_text('\n'.join([
-            'mail._domainkey.{0} {0}:mail:/etc/opendkim/keys/{0}/mail.private'.format(domain)
+            'mail._domainkey.{0} {0}:mail:/etc/opendkim/keys/{0}/mail.private'.format(
+                domain)
             for domain in domains
         ])+'\n')
         signing_table_file.write_text('\n'.join([
@@ -87,13 +89,16 @@ class OpenDkimConfigurator(Configurator):
                 '--domain='+str(domain),
                 '--subdomains',
             ]
-            subprocess.run(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            dns_record = Path(domainkeys_path, 'mail.txt').read_text().replace('\n', '').replace('\t', '')
-            dns_optional_match: Optional[Match[str]] = re.search(r'"v=(\w+);.*k=(\w+);.*p=(.*)"', dns_record)
+            if not Path(domainkeys_path, 'mail.txt').exists():
+                subprocess.run(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+            dns_record = Path(domainkeys_path, 'mail.txt').read_text().replace(
+                '\n', '').replace('\t', '')
+            dns_optional_match: Optional[Match[str]] = re.search(
+                r'"v=(\w+);.*k=(\w+);.*p=(.*)"', dns_record)
             if dns_optional_match is None:
                 continue
             dns_match: Match[str] = dns_optional_match

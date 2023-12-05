@@ -17,24 +17,29 @@ def get_configuration_sequence(configurators_to_allocate: List['Configurator'], 
         found = False
         for cta in range(len(configurators_to_allocate)):
             cfgtr = configurators_to_allocate[cta]
-            will_run = all(list(map(lambda need: need in configurators_namespace, cfgtr._needs())))
+            will_run = all(
+                list(map(lambda need: need in configurators_namespace, cfgtr._needs())))
             if will_run:
                 found = True
                 configurators_to_allocate.remove(cfgtr)
                 configurators_in_sequence.append(cfgtr)
-                configurators_namespace = list(set([*configurators_namespace, *cfgtr._provides()]))
+                configurators_namespace = list(
+                    set([*configurators_namespace, *cfgtr._provides()]))
                 break
         if not found:
-            raise NotImplementedError('There is an unmet dependency at classes: %r' % configurators_to_allocate)
+            raise NotImplementedError(
+                'There is an unmet dependency at classes: %r' % configurators_to_allocate)
     return configurators_in_sequence
 
 
 class Configurator:
     @classmethod
     def configure_many(self, configurators_classes: List[Type['Configurator']], given_data: given_data_type) -> None:
-        configurators: List['Configurator'] = get_configuration_sequence(list(map(lambda cfgtrs: cfgtrs(), configurators_classes)), list(given_data.keys()))
+        configurators: List['Configurator'] = get_configuration_sequence(list(
+            map(lambda cfgtrs: cfgtrs(), configurators_classes)), list(given_data.keys()))
         for configurator in configurators:
-            newdata: Optional[given_data_type] = configurator._work(**{cn: given_data[cn] for cn in configurator._needs()})
+            newdata: Optional[given_data_type] = configurator._work(
+                **{cn: given_data[cn] for cn in configurator._needs()})
             if newdata is not None:
                 for k, v in newdata.items():
                     given_data[k] = v
